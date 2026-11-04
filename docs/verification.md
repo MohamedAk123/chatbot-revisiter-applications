@@ -1,20 +1,23 @@
-# Vérification du socle
+# Vérification
 
-Vérification locale le 31 octobre 2026 avec Python 3.11.9 sous Windows.
+La livraison du 3 novembre 2026 a passé **367 tests** sous Windows avec Python 3.11.
+Les tests isolent les comptes et les données. Ils couvrent notamment l’import,
+les références, les routes statiques, la persistance, les propositions, la dictée,
+l’annulation, la comparaison de versions et les contrôles de preuves.
 
-- `pytest -q` : 6 tests réussis.
-- `ruff check .` : aucun défaut signalé.
-- Aucun appel au fournisseur IA ; aucune clé utilisée.
-- Les poids CamemBERT/BERT ne sont pas téléchargés pendant ces tests.
-- Les appels réels, la qualité NLP et les objectifs du CDC restent à mesurer.
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m ruff check .
+```
 
-## Versions utilisées
+Les tests utilisent des doubles pour les modèles et certaines intégrations.
+Ils ne mesurent pas l’exactitude générale des réponses ou la qualité des encodeurs.
 
-- langchain : 1.4.7
-- langchain-core : 1.7.3
-- langgraph : 1.2.19
-- langchain-ollama : 1.1.0
-- ollama : 0.6.3
-- python-dotenv : 1.2.4
-- pytest : 9.2.0
-- ruff : 0.17.3
+Des essais distincts avec Ollama local ont vérifié l’annulation suivie d’une nouvelle
+requête. Une transcription audio synthétique en anglais a aussi été testée ; elle
+ne mesure pas la précision du français ou de l’arabe, ni le microphone physique.
+
+Docker était absent du poste de référence : ses commandes et leurs erreurs sont testées,
+mais aucun succès réel de tests Python/JavaScript en conteneur n’est revendiqué.
+Les essais personnalisés contrôlent des critères mécaniques et prévoient une revue
+humaine. Les citations, transformations et résultats restent à examiner.

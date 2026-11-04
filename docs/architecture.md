@@ -1,47 +1,28 @@
-# Architecture proposée
+# Architecture actuelle
 
-Le socle sépare l'import, les encodeurs, l'accès Ollama et l'orchestration. Le code
-fourni par l'utilisateur reste du texte : aucune importation Python, exécution,
-installation de dépendances ou modification automatique de ce code n'est prévue.
+L’interface principale est `app.py`. Les modules de `src/revisiter` séparent la
+lecture des fichiers, l’analyse, la recherche, les réponses et les espaces persistants.
 
-```mermaid
-flowchart LR
-    F[Fichiers choisis] --> V[Validation et lecture]
-    V --> C[Passages et références de lignes]
-    C --> E[CamemBERT ou BERT]
-    Q[Question] --> E
-    E --> R[Recherche des passages]
-    R --> L[LangChain et Ollama]
-    L --> A[Réponse et sources]
-    A --> G[Plan guidé à développer]
-```
+1. Les lecteurs importent les fichiers autorisés en conservant les références de lignes.
+   L’interface accepte fichiers, dossiers, ZIP et dépôts GitHub publics avec des limites.
+2. Le filtre masque les secrets détectés et repère certaines instructions suspectes
+   avant indexation et sauvegarde. Sa détection par motifs reste partielle.
+3. Les analyseurs extraient symboles et relations syntaxiques. Des routes déterministes
+   décrivent les fichiers, les appels et certains calculs.
+4. La recherche hybride combine repérage lexical et encodeurs CamemBERT/BERT.
+   Ces encodeurs ne génèrent pas les réponses.
+5. `workflow.py` orchestre les réponses via LangGraph ; `ollama_client.py` assure
+   l’intégration LangChain/Ollama. La file de génération est bornée et annulable.
+6. `preuves.py` contrôle les citations et quelques affirmations reconnues.
+   Cela ne constitue pas une preuve générale de correction sémantique.
+7. Les recommandations et transformations sont des propositions à relire.
+   Elles ne sont pas appliquées automatiquement aux fichiers importés.
+8. La validation dynamique facultative exige Docker local, sans exécution du code
+   importé sur l’hôte et sans repli si Docker manque.
 
-Le premier graphe implémente seulement recherche puis réponse. Le plan guidé sera
-un graphe distinct avec progression enregistrée et interruption avant de présenter
-l'étape suivante. Les modèles ne recevront aucun outil permettant de modifier ou
-d'exécuter les fichiers. Une confirmation humaine n'est pas une preuve d'exécution.
+Les espaces et comptes utilisent un stockage local exclu de Git. La dictée utilise
+faster-whisper localement, puis demande la confirmation du texte transcrit.
+La file de génération est propre à un processus Streamlit ; plusieurs instances
+nécessiteraient une coordination partagée.
 
-## Décisions initiales révisables
-
-- Import : 50 fichiers au maximum, 200 000 octets par fichier, 2 000 000 par projet.
-- Formats initiaux : `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.html`, `.css`, `.md`, `.txt`.
-- Aucune archive ZIP ou import Git distant dans le socle.
-- Découpage de 30 lignes, références aux chemins fournis ; pas d'analyse syntaxique.
-- Recherche en mémoire adaptée à un petit projet, sans base vectorielle pour le moment.
-- Encodeurs interchangeables ; poids chargés à la demande et modèles non affinés.
-- CLI pour valider la chaîne ; choix de l'interface française à la prochaine étape.
-- Pas de persistance du code ou des conversations dans ce premier socle.
-
-## Travail à terminer
-
-Le prompt seul ne suffit pas à garantir les citations ni la résistance aux instructions
-malveillantes dans le code importé. Ajouter une sortie structurée avec validation des
-références et des essais adversariaux. Détecter les secrets évidents avant transmission.
-Un filtrage de secrets ne garantit pas l'absence de toute donnée sensible.
-
-Définir la conservation et la suppression des sessions avant d'ajouter le stockage.
-Conserver une empreinte des fichiers : une nouvelle version doit invalider l'ancien
-contexte et empêcher la poursuite d'un plan devenu obsolète.
-
-La latence NLP à froid et le téléchargement des poids se mesurent séparément des
-questions sur un index déjà construit. Les objectifs du CDC restent à vérifier.
+Les documents de planning et backlog conservent le cadrage initial.

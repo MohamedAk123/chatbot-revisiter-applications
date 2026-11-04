@@ -1,5 +1,8 @@
 """CamemBERT et BERT comme bases expérimentales de recherche de passages."""
 
+from collections import OrderedDict
+from hashlib import sha256
+
 from langchain_core.embeddings import Embeddings
 
 MODEL_IDS = {
@@ -20,6 +23,7 @@ class TransformerEmbeddings(Embeddings):
             raise ValueError("Encodeur attendu : camembert ou bert.")
         self.model_id = MODEL_IDS[encoder]
         self._model = self._tokenizer = self._torch = None
+        self._cache = OrderedDict()
 
     def _load(self):
         if self._model is not None:
@@ -29,10 +33,22 @@ class TransformerEmbeddings(Embeddings):
             from transformers import AutoModel, AutoTokenizer
         except ImportError as error:
             raise RuntimeError('Installez les dépendances NLP : pip install -e ".[nlp]"') from error
-        self._tokenizer = AutoTokenizer.from_pretrained(self.model_id, trust_remote_code=False)
-        self._model = AutoModel.from_pretrained(
-            self.model_id, trust_remote_code=False, use_safetensors=True
-        ).eval()
+        def charger(local_uniquement):
+            tokenizer = AutoTokenizer.from_pretrained(
+                self.model_id, trust_remote_code=False, local_files_only=local_uniquement
+            )
+            model = AutoModel.from_pretrained(
+                self.model_id, trust_remote_code=False, use_safetensors=True,
+                local_files_only=local_uniquement,
+            ).eval()
+            return tokenizer, model
+
+        try:
+            tokenizer, model = charger(True)
+        except OSError:
+            # Le premier téléchargement reste possible lorsque le cache est incomplet.
+            tokenizer, model = charger(False)
+        self._tokenizer, self._model = tokenizer, model
         self._torch = torch
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
@@ -40,6 +56,11 @@ class TransformerEmbeddings(Embeddings):
         torch = self._torch
         results = []
         for text in texts:
+            cle = sha256(text.encode("utf-8")).digest()
+            if cle in self._cache:
+                self._cache.move_to_end(cle)
+                results.append(list(self._cache[cle]))
+                continue
             inputs = self._tokenizer(
                 text, return_tensors="pt", padding=True, truncation=True,
                 max_length=512, return_overflowing_tokens=True, stride=32,
@@ -52,7 +73,11 @@ class TransformerEmbeddings(Embeddings):
                 mask = (inputs["attention_mask"] * (1 - special)).unsqueeze(-1)
                 pooled = (output * mask).sum(dim=(0, 1)) / mask.sum().clamp(min=1)
                 vector = torch.nn.functional.normalize(pooled, dim=0)
-            results.append(vector.tolist())
+            resultat = vector.tolist()
+            self._cache[cle] = tuple(resultat)
+            if len(self._cache) > 256:
+                self._cache.popitem(last=False)
+            results.append(resultat)
         return results
 
     def embed_query(self, text: str) -> list[float]:

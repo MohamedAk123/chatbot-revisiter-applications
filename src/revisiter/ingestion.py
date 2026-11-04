@@ -3,7 +3,32 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-ALLOWED_EXTENSIONS = {".py", ".js", ".ts", ".tsx", ".jsx", ".html", ".css", ".md", ".txt"}
+ALLOWED_EXTENSIONS = {
+    # Python et notebooks Jupyter
+    ".py", ".pyi", ".ipynb",
+    ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx",
+
+    # Interface web
+    ".html", ".htm", ".css", ".scss", ".sass",
+    ".vue", ".svelte",
+
+    # Autres langages
+    ".java", ".kt", ".kts", ".cs",
+    ".c", ".h", ".cpp", ".hpp", ".cc",
+    ".go", ".rs", ".php", ".rb",
+    ".swift", ".dart", ".scala",
+
+    # Scripts
+    ".sh", ".ps1", ".bat",
+
+    # Configuration et données textuelles
+    ".json", ".yaml", ".yml", ".toml", ".xml",
+    ".ini", ".cfg", ".properties",
+    ".sql", ".graphql", ".gql", ".csv", ".tsv",
+
+    # Documentation
+    ".md", ".mdx", ".txt", ".rst",
+}
 EXCLUDED_PARTS = {".git", "node_modules", ".venv", "venv", "__pycache__"}
 MAX_FILE_BYTES = 200_000
 MAX_PROJECT_BYTES = 2_000_000

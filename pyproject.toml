@@ -13,11 +13,19 @@ dependencies = [
   "langchain-ollama>=1,<2",
   "langgraph>=1,<2",
   "python-dotenv>=1,<2",
+  "httpx>=0.28,<1",
+  "streamlit>=1.66,<2",
+  "tree-sitter==0.25.2",
+  "tree-sitter-language-pack==0.13.0",
+  "tree-sitter-c-sharp==0.23.5",
+  "tree-sitter-embedded-template==0.25.0",
+  "tree-sitter-yaml==0.7.2",
 ]
 
 [project.optional-dependencies]
 nlp = ["torch>=2.6,<3", "transformers>=4.50,<6", "sentencepiece>=0.2,<1"]
 dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
+vocal = ["faster-whisper==1.2.1"]
 
 [project.scripts]
 revisiter = "revisiter.cli:main"

@@ -1,94 +1,99 @@
-# Chatbot Revisiter les applications
+# Revisiter · Assistant d’analyse de code
 
-Prototype académique en binôme, à rendre le **16 novembre 2026**. L'assistant doit
-aider un développeur à comprendre une application, identifier des améliorations
-justifiées et appliquer lui-même une transformation guidée.
+Chatbot en français pour comprendre une application, retrouver ses fonctions et ses
+relations, examiner des améliorations et préparer une transformation guidée.
+Projet académique en binôme, rendu le **16 novembre 2026**.
 
-## État de cette première version
+## Fonctionnalités
 
-Ce dépôt contient le **socle technique**, pas encore le MVP complet :
+- Interface Streamlit avec discussion, schémas, cartographie et passages de code cités.
+- Import de fichiers, dossiers, archives ZIP et dépôts GitHub publics.
+- Recherche hybride, avec encodeurs CamemBERT ou BERT et génération locale par Ollama.
+- Analyse syntaxique multilangage, appelants directs/indirects et comparaison de versions.
+- Propositions de code, différences, tests proposés et étapes de transformation à examiner.
+- Espaces de travail persistants, comptes optionnels, dictée vocale locale avec confirmation du texte.
+- Masquage des secrets détectés, annulation des générations et diagnostic des temps de réponse.
+- Évaluation des réponses sur des cas attendus et revue humaine des résultats.
 
-- Configuration Ollama Cloud avec une clé locale, ou Ollama local sans clé.
-- Import explicite de fichiers UTF-8, contrôle du format, du volume et des contenus binaires.
-- Découpage avec conservation des chemins et numéros de lignes.
-- Adaptateurs expérimentaux CamemBERT et BERT multilingue.
-- Premier graphe LangGraph : recherche de passages puis question/réponse via LangChain.
-- Tests sans appels IA et vérifications GitHub Actions.
+## Installation sous Windows
 
-L'interface, les sessions persistantes, le résumé global, les recommandations structurées,
-la transformation guidée, l'export et les retours utilisateurs restent à développer.
-Les citations sont demandées au modèle ; leur validité sémantique n'est pas encore contrôlée.
-Les passages fournis au modèle sont affichés séparément des citations de sa réponse.
-
-## Rôle des technologies
-
-| Technologie | Rôle retenu |
-|---|---|
-| Python 3.11 à 3.13 | Traitement, services et tests |
-| LangChain | Messages, interface d'embeddings et connexion au modèle |
-| LangGraph | Organisation du traitement ; puis état des étapes guidées |
-| Ollama | Accès au modèle génératif local ou Cloud |
-| CamemBERT | Base expérimentale pour les textes et questions en français |
-| BERT multilingue | Variante de comparaison pour la recherche de passages |
-
-CamemBERT/BERT sont ici des encodeurs, et non le moteur de génération des réponses.
-Les modèles de base avec moyenne des tokens ne sont pas spécialisés dans la recherche
-sémantique de code. Nous mesurerons leur intérêt sur les mêmes questions ; aucune
-supériorité de l'un des modèles n'est supposée. Le modèle génératif précis reste à choisir.
-
-## Installation Windows
-
-Dans le dossier du dépôt, avec Python 3.11 installé :
+Dans PowerShell, avec Python 3.11 installé :
 
 ```powershell
+git clone https://github.com/MohamedAk123/chatbot-revisiter-applications.git
+Set-Location chatbot-revisiter-applications
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev,nlp]"
 Copy-Item .env.example .env
 ```
 
-Ouvrir `.env` dans son éditeur et renseigner `OLLAMA_MODEL` et `OLLAMA_API_KEY`.
-Le mode Cloud utilise `https://ollama.com` avec le chemin `/api/chat` géré par le client.
-La clé se crée sur [Ollama](https://ollama.com/settings/keys).
-Choisir un nom de modèle disponible dans [la liste API](https://ollama.com/api/tags).
-Ne jamais partager `.env` ni envoyer la clé dans une conversation ou un commit.
-
-Le premier usage de CamemBERT/BERT télécharge ses poids depuis Hugging Face et peut
-prendre du temps. Ils s'exécutent ensuite localement. Une connexion Cloud transmet
-les extraits sélectionnés et la question au fournisseur Ollama. N'utiliser que des fichiers
-autorisés et sans secrets. L'appel IA est déclenché explicitement par la commande ci-dessous.
+Installer et démarrer Ollama, puis télécharger le modèle local :
 
 ```powershell
-.\.venv\Scripts\revisiter.exe examples/demo.py --question "Comment est calculé le total du panier ?"
+ollama pull qwen2.5-coder:3b
 ```
 
-Pour une instance locale : `OLLAMA_MODE=local`, `OLLAMA_API_KEY=` et un
-`OLLAMA_MODEL` préalablement installé sur l'instance `localhost:11434`.
+Le fichier `.env.example` utilise Ollama local : aucune clé ni crédit API n’est
+nécessaire. Ne jamais publier le fichier `.env` contenant une configuration réelle.
+Le premier usage d’un encodeur télécharge ses poids ; les questions suivantes réutilisent le cache.
 
-## Vérifications sans clé et sans téléchargement de modèles
+Pour activer la dictée vocale (optionnelle) :
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
-.\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m pip install --only-binary=:all: -r requirements-vocales.txt
+```
+
+Le modèle de transcription est téléchargé au premier usage, puis fonctionne localement.
+La transcription peut être corrigée avant l’envoi de la question.
+
+## Lancer
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1
+```
+
+Ouvrir l’adresse affichée dans le terminal et laisser celui-ci ouvert.
+
+## Tester
+
+```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Les tests utilisent des doubles pour le modèle et les embeddings. Ils ne démontrent
-pas la qualité de CamemBERT/BERT ni celle des réponses réelles du fournisseur.
+La livraison de référence a passé **367 tests** sous Windows. Ces tests vérifient
+les comportements techniques ; ils ne prouvent pas l’exactitude de toutes les réponses d’un modèle.
 
-## Organisation du travail
+Pour un premier essai, importer `examples/demo.py` puis demander :
 
-- [Architecture et décisions](docs/architecture.md)
-- [Planning jusqu'au rendu et répartition proposée](docs/planning.md)
-- [Fonctionnalités et critères d'acceptation](docs/backlog.md)
+- « Explique la fonction total_panier et cite les lignes utilisées. »
+- « Quel est le résultat de total_panier([10, -3]) ? »
+- « Quels contrôles des entrées seraient utiles ? Justifie avec le code. »
 
-Créer une branche par fonctionnalité et une pull request relue par l'autre membre.
-La répartition A/B du planning est une proposition ; les noms sont à compléter.
-Le dépôt est privé à sa création. L'ajout du binôme attend son identifiant GitHub.
+## Validation isolée des tests proposés
 
-## Sources techniques
+L’exécution du code importé exige Docker local en mode conteneurs Linux et une image
+préparée explicitement :
 
-- [Intégration LangChain et Ollama](https://docs.langchain.com/oss/python/integrations/chat/ollama)
-- [Ollama Cloud et clé API](https://docs.ollama.com/cloud)
-- [Interruptions LangGraph](https://docs.langchain.com/oss/python/langgraph/interrupts)
-- [CamemBERT](https://huggingface.co/almanach/camembert-base)
-- [BERT multilingue](https://huggingface.co/google-bert/bert-base-multilingual-cased)
+```powershell
+.\.venv\Scripts\python.exe -m revisiter.validation_isolee --preparer
+```
+
+Sans Docker, le résultat reste **non exécuté**, sans repli sur le Python du poste.
+L’intégration vise Python/pytest et JavaScript/node:test. Elle n’a pas encore été
+vérifiée avec un moteur Docker réel sur le poste de référence.
+
+## Limites et données
+
+Les citations et certaines affirmations calculables sont contrôlées par des règles
+bornées. L’analyse syntaxique ne résout pas tous les appels dynamiques. Les réponses
+du modèle, recommandations et transformations demandent une revue humaine.
+La latence dépend du matériel, du contexte et du chargement des modèles.
+
+Les données de travail locales sont conservées sous `.revisiter/`, exclu de Git.
+Le masquage par motifs peut manquer des secrets : importer uniquement du code dont
+le partage et l’analyse sont autorisés. Le dépôt n’inclut ni modèles, ni clé API,
+ni historique de discussion, ni enregistrement audio.
+
+Les documents `docs/planning.md` et `docs/backlog.md` conservent le cadrage initial.
+Voir `docs/architecture.md` pour l’organisation actuelle et `docs/verification.md`
+pour le périmètre de validation.
