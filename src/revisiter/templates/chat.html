@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf }}">
+  <title>Revisiter — Atelier de code</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+  <script src="{{ url_for('static', filename='chat.js') }}" defer></script>
+</head>
+<body>
+  <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 4l-4 16"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M5 18v3l4-3h8a4 4 0 0 0 4-4V8a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v6a4 4 0 0 0 2 4Z"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10Zm0 0v7h7M8 14h8m-8 3h5"/></symbol>
+    <symbol id="i-diagram" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4m-6 4v-4h12v4"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 2c1 7 3 9 10 10-7 1-9 3-10 10C11 15 9 13 2 12c7-1 9-3 10-10Z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m6 11 6-6 6 6m-6-6v14"/></symbol>
+    <symbol id="i-ne" viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24"><path d="m8 13 6-6a3 3 0 1 1 4 4l-8 8a4.5 4.5 0 0 1-6.4-6.4L13 3.2a2 2 0 0 1 2.8 2.8l-8 8a1 1 0 0 0 1.4 1.4l6-6"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11v1a7 7 0 0 0 14 0v-1M12 19v3"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 5a1 1 0 0 0-1-1H6a2 2 0 0 0-2 2v9a1 1 0 0 0 1 1"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="m4 16-1 5 5-1L20 8l-4-4ZM14 6l4 4"/></symbol>
+  </svg>
+  {% macro icon(name) %}<svg class="icon" aria-hidden="true"><use href="#i-{{ name }}"></use></svg>{% endmacro %}
+  {% if not utilisateur %}
+  <main class="login-page">
+    <form id="login-form" class="login-card">
+      <span class="brand-icon">{{ icon('code') }}</span>
+      <h1>Revisiter.</h1>
+      <p>Connectez-vous à votre atelier de code.</p>
+      <label>Identifiant<input name="username" autocomplete="username" required maxlength="40"></label>
+      <label>Mot de passe<input name="password" type="password" autocomplete="current-password" required maxlength="256"></label>
+      <button class="primary-button" type="submit">Se connecter</button>
+      <p id="login-error" role="alert"></p>
+    </form>
+  </main>
+  {% else %}
+  <div id="atelier" class="layout">
+    <button id="sidebar-scrim" class="scrim" aria-label="Fermer l’historique" hidden></button>
+    <aside class="sidebar" id="sidebar" aria-label="Historique des conversations">
+      <div class="sidebar-top">
+        <a class="brand" href="/" aria-label="Revisiter, accueil"><span class="brand-icon">{{ icon('code') }}</span><span>revisiter<span class="brand-point">.</span><small>Atelier de code</small></span></a>
+        <button id="sidebar-close" class="icon-button" title="Masquer l’historique" aria-label="Masquer l’historique">{{ icon('panel') }}</button>
+      </div>
+      <button id="new-chat" class="new-chat">{{ icon('plus') }} Nouvelle conversation</button>
+      <div class="history-heading"><span>HISTORIQUE</span><span id="history-count"></span></div>
+      <input id="history-search" class="history-search" aria-label="Rechercher une conversation" placeholder="Rechercher…" hidden>
+      <nav id="history" class="history-list"></nav>
+      <div class="sidebar-bottom">
+        <span class="profile-mark">{{ icon('code') }}</span>
+        <span><strong>{{ utilisateur.username if partage else 'Espace personnel' }}</strong><small>Historique enregistré</small></span>
+        {% if partage %}<button id="logout" class="small-button">Quitter</button>{% endif %}
+      </div>
+    </aside>
+    <main class="workspace">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebar-open" class="icon-button" title="Afficher l’historique" aria-label="Afficher l’historique">{{ icon('panel') }}</button>
+          <span id="conversation-title">Nouvelle conversation</span>
+          <button id="rename" class="icon-button" title="Renommer la conversation" aria-label="Renommer la conversation" hidden>{{ icon('pencil') }}</button>
+        </div>
+        <div class="topbar-right">
+          <span class="model-pill" title="{{ modele }}"><span class="status-dot"></span> {{ 'Ollama Cloud' if mode == 'cloud' else 'Ollama local' }}</span>
+          <button id="project-open" class="top-button" aria-label="Ouvrir les fichiers du projet">{{ icon('folder') }} <span>Fichiers</span> <span id="files-count" class="count" hidden></span></button>
+        </div>
+      </header>
+      <section id="scroll-area" class="scroll-area" aria-label="Discussion">
+        <div id="welcome" class="welcome">
+          <div class="welcome-mark">{{ icon('code') }}</div>
+          <p class="eyebrow">VOTRE ATELIER DE CODE</p>
+          <h1>Que voulez-vous explorer&nbsp;?</h1>
+          <p class="welcome-description">Importez votre projet, posez une question et retrouvez les lignes qui éclairent la réponse.</p>
+          <div class="suggestions">
+            <button class="suggestion" data-prompt="Quel est le rôle de chacun des fichiers importés ?">
+              <span class="suggestion-icon">{{ icon('file') }}</span><span><strong>Comprendre les fichiers</strong><small>Obtenir un aperçu du projet</small></span>{{ icon('ne') }}
+            </button>
+            <button class="suggestion" data-prompt="Crée un schéma des appels entre les fonctions.">
+              <span class="suggestion-icon blue">{{ icon('diagram') }}</span><span><strong>Tracer les appels</strong><small>Visualiser les liens du code</small></span>{{ icon('ne') }}
+            </button>
+            <button class="suggestion" data-prompt="Quelles améliorations du code recommandes-tu ? Appuie-toi sur des lignes précises.">
+              <span class="suggestion-icon amber">{{ icon('spark') }}</span><span><strong>Trouver des améliorations</strong><small>Repérer les points à vérifier</small></span>{{ icon('ne') }}
+            </button>
+            <button class="suggestion" id="demo">
+              <span class="suggestion-icon lime">{{ icon('code') }}</span><span><strong>Essayer avec Atlas</strong><small>Charger un exemple prêt à analyser</small></span>{{ icon('ne') }}
+            </button>
+          </div>
+        </div>
+        <div id="messages" class="messages" aria-live="off"></div>
+      </section>
+      <footer class="composer-dock">
+        <div id="notice" class="notice" role="status" hidden></div>
+        <form id="composer" class="composer">
+          <textarea id="question" maxlength="1500" rows="1" aria-label="Votre question" placeholder="Posez une question sur votre projet…"></textarea>
+          <div class="composer-actions">
+            <button id="attach" type="button" class="icon-button" title="Joindre des fichiers" aria-label="Joindre des fichiers">{{ icon('clip') }}</button>
+            <select id="answer-format" aria-label="Format de réponse">
+              <option value="Auto">Réponse auto</option><option value="Texte">Texte</option><option value="Schéma">Schéma</option>
+            </select>
+            <div class="composer-spacer"></div>
+            <button id="mic" type="button" class="icon-button" title="{{ 'Dicter une question' if vocal else 'Installez les dépendances vocales pour dicter' }}" aria-label="Dicter une question" {% if not vocal %}disabled{% endif %}>{{ icon('mic') }}</button>
+            <button id="send" class="send-button" type="submit" title="Envoyer" aria-label="Envoyer" disabled>{{ icon('arrow') }}</button>
+            <button id="stop" class="send-button" type="button" title="Arrêter la génération" aria-label="Arrêter la génération" hidden>{{ icon('stop') }}</button>
+          </div>
+        </form>
+        <p class="composer-note">Relisez les propositions et ouvrez les sources avant de modifier votre code.</p>
+      </footer>
+    </main>
+  </div>
+  <dialog id="project-dialog" class="dialog project-dialog">
+    <div class="dialog-head"><div><p class="eyebrow">CONTEXTE DE DISCUSSION</p><h2>Fichiers du projet</h2></div><button class="icon-button" data-close title="Fermer" aria-label="Fermer">{{ icon('close') }}</button></div>
+    <p id="project-caption" class="dialog-copy">Les fichiers joints aident Revisiter à citer le code.</p>
+    <div id="upload-tools">
+      <div class="import-actions">
+        <button id="pick-files" class="outline-button">{{ icon('plus') }} Fichiers ou ZIP</button>
+        <button id="pick-folder" class="outline-button">{{ icon('folder') }} Dossier</button>
+      </div>
+      <input id="file-input" type="file" multiple hidden>
+      <input id="folder-input" type="file" webkitdirectory multiple hidden>
+      <details class="github-import">
+        <summary>Importer depuis GitHub</summary>
+        <form id="github-form">
+          <label>Dépôt public<input id="github-url" type="url" maxlength="400" placeholder="https://github.com/organisation/projet" required></label>
+          <label>Branche ou révision<input id="github-ref" type="text" maxlength="160" placeholder="HEAD"></label>
+          <button class="outline-button" type="submit">Importer</button>
+        </form>
+      </details>
+    </div>
+    <p id="import-status" class="import-status" role="status" hidden></p>
+    <div id="project-files" class="project-files"></div>
+    <div class="dialog-footer">
+      <label>Recherche<select id="search-mode"><option value="auto">Automatique</option><option value="lexical">Lexicale</option><option value="semantic">Approfondie</option></select></label>
+      <a id="export" class="outline-button" hidden>{{ icon('download') }} Exporter (.md)</a>
+    </div>
+  </dialog>
+  <dialog id="source-dialog" class="dialog source-dialog">
+    <div class="dialog-head"><div><p class="eyebrow">CODE SOURCE</p><h2 id="source-title">Fichier</h2></div><button class="icon-button" data-close title="Fermer" aria-label="Fermer">{{ icon('close') }}</button></div>
+    <pre id="source-code" tabindex="0"></pre>
+  </dialog>
+  <dialog id="rename-dialog" class="dialog rename-dialog">
+    <div class="dialog-head"><h2>Renommer la conversation</h2><button class="icon-button" data-close title="Fermer" aria-label="Fermer">{{ icon('close') }}</button></div>
+    <form id="rename-form"><label>Titre<input id="rename-value" maxlength="120" required></label><button type="submit" class="primary-button">Enregistrer</button></form>
+  </dialog>
+  {% endif %}
+</body>
+</html>

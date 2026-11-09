@@ -14,6 +14,8 @@ dependencies = [
   "langgraph>=1,<2",
   "python-dotenv>=1,<2",
   "httpx>=0.28,<1",
+  "flask>=3.1,<4",
+  "markdown-it-py>=3,<5",
   "streamlit>=1.66,<2",
   "tree-sitter==0.25.2",
   "tree-sitter-language-pack==0.13.0",
@@ -32,6 +34,9 @@ revisiter = "revisiter.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+revisiter = ["templates/*.html", "static/*.css", "static/*.js", "interface.css"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

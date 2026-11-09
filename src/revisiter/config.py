@@ -28,12 +28,12 @@ class Settings:
         return "https://ollama.com" if self.mode == "cloud" else "http://localhost:11434"
 
 
-def load_settings() -> Settings:
+def load_settings(*, mode_par_defaut="cloud", modele_par_defaut="") -> Settings:
     # Chargement explicite depuis le dossier de lancement, sans modifier l'environnement.
     load_dotenv(".env", override=False)
     return Settings(
-        mode=os.getenv("OLLAMA_MODE", "cloud").strip(),
-        model=os.getenv("OLLAMA_MODEL", "").strip(),
+        mode=os.getenv("OLLAMA_MODE", mode_par_defaut).strip(),
+        model=os.getenv("OLLAMA_MODEL", modele_par_defaut).strip(),
         api_key=os.getenv("OLLAMA_API_KEY", "").strip(),
         encoder=os.getenv("NLP_ENCODER", "camembert").strip(),
     )

@@ -6,7 +6,7 @@ Projet académique en binôme, rendu le **16 novembre 2026**.
 
 ## Fonctionnalités
 
-- Interface Streamlit avec discussion, schémas, cartographie et passages de code cités.
+- Interface Flask avec discussion progressive, historique, fichiers joints et passages de code cliquables.
 - Import de fichiers, dossiers, archives ZIP et dépôts GitHub publics.
 - Recherche hybride, avec encodeurs CamemBERT ou BERT et génération locale par Ollama.
 - Analyse syntaxique multilangage, appelants directs/indirects et comparaison de versions.
@@ -17,11 +17,9 @@ Projet académique en binôme, rendu le **16 novembre 2026**.
 
 ## Installation sous Windows
 
-Dans PowerShell, avec Python 3.11 installé :
+Dans le dossier du projet, ouvrez PowerShell avec Python 3.11 installé :
 
 ```powershell
-git clone https://github.com/MohamedAk123/chatbot-revisiter-applications.git
-Set-Location chatbot-revisiter-applications
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev,nlp]"
 Copy-Item .env.example .env
@@ -46,13 +44,21 @@ Pour activer la dictée vocale (optionnelle) :
 Le modèle de transcription est téléchargé au premier usage, puis fonctionne localement.
 La transcription peut être corrigée avant l’envoi de la question.
 
-## Lancer
+## Lancer le chat Flask
 
 ```powershell
-.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1
+.\.venv\Scripts\python.exe -m flask --app revisiter.web run --host 127.0.0.1 --port 8540
 ```
 
-Ouvrir l’adresse affichée dans le terminal et laisser celui-ci ouvert.
+Ouvrir http://127.0.0.1:8540/ et laisser le terminal ouvert. Le bouton
+**Essayer avec Atlas** charge un exemple. Les conversations et leurs fichiers
+sont enregistrés dans le stockage local de Revisiter.
+
+La cartographie avancée, le plan guidé avec suivi et l’évaluation restent
+accessibles dans l’atelier Streamlit. Depuis le même dossier, les deux
+interfaces retrouvent les espaces enregistrés dans le même stockage.
+
+    .\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1
 
 ## Tester
 
